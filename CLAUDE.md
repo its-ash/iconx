@@ -6,18 +6,23 @@ check of the phone's apps, and apply buttons for launchers.
 
 ## Single source of truth: `assets/icons/*.txt`
 
-Format is documented at the top of `assets/icons/google.txt`: `[name]`, `label`, `bg`, `fg`, one
-`app = package/Activity` per launcher component (leading `.` = relative to the package), then 16 rows
-of 16 characters (`#` fg, `.` bg). A line matching `[.#]{16}` is a grid row; other lines starting with
-`#` are comments. File name = group (`itsash.txt` shows as "Ash Store").
+Format is documented in `lib/icons/icon_format.dart` and at the top of `assets/icons/10-google.txt`:
+`group = Title` once per file, then per icon `[name]`, `label`, `bg`, `fg`, one `app = package/Activity`
+per launcher component (leading `.` = relative to the package), then 16 rows of 16 characters
+(`#` fg, `.` bg). A line matching `[.#]{16}` is a grid row; other lines starting with `#` are comments.
+Files load in name order (`10-google`, `20-system`, `30-popular`, `40`-`44` India groups, `50-global`,
+`60-phone-makers`, `90-ash-store`), which is the gallery order. A new file must also be added to
+`FILES` in `index.html` (a test checks this).
 
-Two readers, keep them in sync:
+Readers, keep them in sync:
 - `android/app/build.gradle.kts` `IconPackTask` (one task per variant, wired with
   `variant.sources.res/assets.addGeneratedSourceDirectory`): writes `drawable-nodpi/<name>.png`
   (240 px, 12 px per cell), `iconback.png` (plain #1F2937 tile, `scale 0.7` for uncovered apps),
   `res/xml/appfilter.xml`, `res/xml/drawable.xml` and copies of both in `assets/`. Fails the build with
   `file:line` on bad input. Nothing generated is checked in.
-- `lib/icons/icon_source.dart` `parseIcons` (gallery, tests). `pixel_icon_view.dart` paints the same tile.
+- `lib/icons/icon_format.dart` `parseIconDefs` + `crossCheck` (pure Dart, no Flutter imports), used by
+  `icon_source.dart` (gallery, tests) and `tool/preview.dart`. `pixel_icon_view.dart` paints the tile.
+- `index.html` has a small JS parser for the landing-page gallery.
 
 Launchers match `appfilter.xml` by exact component. When an app update renames its launcher activity,
 add another `app =` line (the **Your apps** tab lists these as "Icon exists, app changed").
@@ -41,8 +46,11 @@ Get components from a phone:
 ## Commands
 
 - `make run`, `make build`, `make test` (analyze + tests; tests also parse the real icon files and
-  check unique names/components), `make preview` (all icons to `dist/preview.png`, needs ImageMagick:
-  look at it after editing icons), `make icon` (app launcher icon from `assets/icon/*.svg`), `make clean`.
+  check unique names/components and the landing-page file list), `make icon` (app launcher icon from
+  `assets/icon/*.svg`), `make clean`.
+- `make preview`: validates all icon files and renders them to `dist/preview.png` (`tool/preview.dart` +
+  `rsvg-convert`, no Gradle). `make check FILES="assets/icons/40-x.txt" OUT=dist/x` does the same for some
+  files (still cross-checked against all). Look at the PNG after editing icons.
 
 ## Conventions
 

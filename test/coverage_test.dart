@@ -6,7 +6,7 @@ import 'package:iconx/platform/launcher_channel.dart';
 void main() {
   final rows = List.filled(16, '#' * 16).join('\n');
   final icons = parseIcons(
-    '[chrome]\nbg = #000000\nfg = #FFFFFF\napp = com.android.chrome/com.google.android.apps.chrome.Main\n$rows\n'
+    'group = Google\n[chrome]\nbg = #000000\nfg = #FFFFFF\napp = com.android.chrome/com.google.android.apps.chrome.Main\n$rows\n'
     '[maps]\nbg = #000000\nfg = #FFFFFF\napp = com.google.android.apps.maps/com.google.android.maps.MapsActivity\n$rows\n',
     file: 'google.txt',
   );

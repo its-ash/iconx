@@ -1,11 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:iconx/icons/icon_format.dart' show crossCheck, parseIconDefs;
 import 'package:iconx/icons/icon_source.dart';
 import 'package:iconx/icons/pixel_icon_view.dart';
 
 const _sample = '''
 # comment
+group = Google
 [demo]
 label = Demo
 bg = #112233
@@ -31,7 +33,7 @@ app = com.demo.beta/com.demo.Main
 ''';
 
 String _icon(String name, {List<String>? rows, String extra = ''}) =>
-    '[$name]\nbg = #000000\nfg = #FFFFFF\napp = a.b/.C\n$extra${(rows ?? List.filled(16, '.' * 16)).join('\n')}\n';
+    'group = Test\n[$name]\nbg = #000000\nfg = #FFFFFF\napp = a.b/.C\n$extra${(rows ?? List.filled(16, '.' * 16)).join('\n')}\n';
 
 void main() {
   test('parses an icon, expands relative activities, keeps rows starting with #', () {
@@ -48,22 +50,34 @@ void main() {
     expect(i.on(5, 5), isFalse);
   });
 
-  test('itsash file is titled Ash Store', () {
-    expect(parseIcons(_icon('a'), file: 'itsash.txt').single.group, 'Ash Store');
+  test('group comes from the group line, and is required', () {
+    expect(parseIcons(_icon('a'), file: 'x.txt').single.group, 'Test');
+    expect(
+      () => parseIcons(_icon('a').replaceFirst('group = Test\n', ''), file: 'x.txt'),
+      throwsA(isA<IconSourceException>().having((e) => e.message, 'message', contains('group'))),
+    );
+  });
+
+  test('cross-check finds duplicate names and shared components', () {
+    final a = parseIconDefs(_icon('a'), file: 'a.txt');
+    final b = parseIconDefs(_icon('a'), file: 'b.txt');
+    expect(crossCheck([...a, ...b]), hasLength(1)); // same name; same component in a same-named icon is one problem
+    final c = parseIconDefs(_icon('c'), file: 'c.txt');
+    expect(crossCheck([...a, ...c]).single, contains('a.b/a.b.C'));
   });
 
   test('errors name the file and line', () {
     expect(
       () => parseIcons(_icon('a', rows: List.filled(15, '.' * 16)), file: 'x.txt'),
       throwsA(
-        isA<IconSourceException>().having((e) => e.toString(), 'text', contains('x.txt:1: [a] has 15 grid rows')),
+        isA<IconSourceException>().having((e) => e.toString(), 'text', contains('x.txt:2: [a] has 15 grid rows')),
       ),
     );
     expect(() => parseIcons('[Bad]\n', file: 'x.txt'), throwsA(isA<IconSourceException>()));
     expect(() => parseIcons(_icon('a', extra: 'size = 3\n'), file: 'x.txt'), throwsA(isA<IconSourceException>()));
     expect(() => parseIcons(_icon('a', extra: 'app = nonsense\n'), file: 'x.txt'), throwsA(isA<IconSourceException>()));
     expect(
-      () => parseIcons('[a]\nbg = red\nfg = #FFFFFF\napp = a/.B\n${'${'.' * 16}\n' * 16}', file: 'x.txt'),
+      () => parseIcons('group = T\n[a]\nbg = red\nfg = #FFFFFF\napp = a/.B\n${'${'.' * 16}\n' * 16}', file: 'x.txt'),
       throwsA(isA<IconSourceException>()),
     );
   });
@@ -97,12 +111,16 @@ void main() {
       expect(icons.length, greaterThan(60));
     });
 
+    test('the landing page lists every icon file', () {
+      final html = File('index.html').readAsStringSync();
+      for (final f in files) {
+        final name = f.uri.pathSegments.last;
+        expect(html, contains('"$name"'), reason: 'add $name to FILES in index.html');
+      }
+    });
+
     test('names are unique and no component is claimed twice', () {
-      final names = icons.map((i) => i.name).toList();
-      expect(names.toSet(), hasLength(names.length));
-      final components = [for (final i in icons) ...i.components];
-      final dupes = components.where((c) => components.where((d) => d == c).length > 1).toSet();
-      expect(dupes, isEmpty, reason: 'components mapped twice: $dupes');
+      expect(crossCheck([for (final i in icons) i.def]), isEmpty);
     });
 
     test('every motif uses both colors and leaves the tile visible', () {

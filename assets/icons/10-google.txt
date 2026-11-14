@@ -1,4 +1,6 @@
-# iconX icon source. Format (see CLAUDE.md):
+# iconX icon source. Files are read in name order (10-, 20-, ...), which is the gallery order.
+# Format (parser: lib/icons/icon_format.dart; check with `make check`):
+#   group = Title              once, before the first icon
 #   [drawable_name]            a-z, 0-9, _ ; becomes res/drawable-nodpi/<name>.png
 #   label = Shown name
 #   bg = #RRGGBB               tile color
@@ -6,6 +8,8 @@
 #   app = package/Activity     one per launcher component; ".Activity" is relative to the package
 #   16 rows of 16 characters:  '#' = fg, '.' = bg
 # Read by android/app/build.gradle.kts (PNGs + appfilter.xml) and lib/icons/icon_source.dart (gallery).
+
+group = Google
 
 [chrome]
 label = Chrome

@@ -1,4 +1,6 @@
-# Popular apps. Format: see google.txt.
+# Popular apps. Format: see 10-google.txt.
+
+group = Popular
 
 [whatsapp]
 label = WhatsApp

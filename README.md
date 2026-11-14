@@ -6,9 +6,10 @@ A pixel-art icon pack: every app icon redrawn as two-color pixel tiles.
 
 ## Features
 
-- **76 pixel icons**, each a two-color tile on a 16×16 grid with pixel-rounded corners: Google apps,
-  system and Motorola apps, popular apps (WhatsApp, Instagram, YouTube, Spotify, Netflix, PhonePe,
-  Paytm, Swiggy, Zomato, Flipkart and more) and the Ash Store apps.
+- **Hundreds of pixel icons**, each a two-color tile on a 16×16 grid with pixel-rounded corners,
+  with a focus on India: UPI apps and banks, shopping and food delivery, trains and travel, OTT, news
+  and cricket, government and telecom apps, learning apps; plus Google, global apps and the built-in
+  apps of Samsung, Xiaomi, Vivo, Oppo, Realme, OnePlus and Motorola phones.
 - **Works with icon pack launchers**: Nova, Lawnchair, Smart Launcher, Niagara, Action Launcher,
   Hyperion, KISS and others. One-tap apply where the launcher supports it.
 - **Apps without an icon** get a dark pixel tile behind their normal icon, so the home screen
@@ -33,7 +34,8 @@ Needs Flutter ≥ 3.44 and the shared theme package at `../theme`.
 ```bash
 make run       # run on a connected device
 make test      # flutter analyze + flutter test (also validates every icon file)
-make preview   # render every pack icon into dist/preview.png (needs ImageMagick)
+make preview   # validate every icon file and render all icons into dist/preview.png
+make check FILES="assets/icons/40-india-money.txt"   # same for some files
 make icon      # regenerate the app's own launcher icon from assets/icon/*.svg
 make build     # release APK
 make deploy    # bump version, build, tag, push, GitHub release (see store.mk)
@@ -41,7 +43,8 @@ make deploy    # bump version, build, tag, push, GitHub release (see store.mk)
 
 ### Adding an icon
 
-Add a block to a file in `assets/icons/` (format at the top of `google.txt`):
+Add a block to a file in `assets/icons/` (format at the top of `10-google.txt`; a new file needs a
+`group = Title` line and an entry in `FILES` in `index.html`):
 
 ```
 [keep]
@@ -67,7 +70,8 @@ version from that release.
 ## Project layout
 
 ```
-assets/icons/*.txt              icon sources (pixel grids, colors, launcher components)
+assets/icons/*.txt              icon sources (pixel grids, colors, launcher components), one file per group
+tool/preview.dart               validate icon files and render a contact sheet
 assets/icon/                    the app's own launcher icon (SVG + PNG)
 android/app/build.gradle.kts    IconPackTask: .txt -> drawable PNGs, appfilter.xml, drawable.xml
 android/app/src/main/
@@ -76,7 +80,8 @@ android/app/src/main/
 lib/
 ├── main.dart
 ├── icons/
-│   ├── icon_source.dart        parser for assets/icons (same rules as the Gradle task)
+│   ├── icon_format.dart        parser for assets/icons (pure Dart; same rules as the Gradle task)
+│   ├── icon_source.dart        loads the icons for the app
 │   ├── pixel_icon_view.dart    paints a tile like the launcher PNG
 │   └── coverage.dart           which installed apps are themed (pure)
 ├── platform/launcher_channel.dart

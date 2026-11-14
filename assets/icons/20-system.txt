@@ -1,4 +1,6 @@
-# System and Motorola apps. Format: see google.txt.
+# System and Motorola apps. Format: see 10-google.txt.
+
+group = System
 
 [settings]
 label = Settings

@@ -44,7 +44,8 @@ flutter {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Icon pack generation. The single source is assets/icons/*.txt (format in google.txt). For each
+// Icon pack generation. The single source is assets/icons/*.txt (format in lib/icons/icon_format.dart
+// and at the top of 10-google.txt; files are read in name order = group order). For each
 // variant this writes, under build/generated:
 //   res/drawable-nodpi/<name>.png   20x20-cell pixel tile, 12 px per cell (240 px)
 //   res/drawable-nodpi/iconback.png plain tile behind apps the pack does not cover
@@ -104,7 +105,7 @@ abstract class IconPackTask : DefaultTask() {
             appendLine("    <iconback img1=\"iconback\" />")
             appendLine("    <scale factor=\"0.7\" />")
             for (icon in icons) for (app in icon.apps) {
-                appendLine("    <item component=\"ComponentInfo{$app}\" drawable=\"${icon.name}\" />")
+                appendLine("    <item component=\"ComponentInfo{${xml(app)}}\" drawable=\"${icon.name}\" />")
             }
             appendLine("</resources>")
         }
@@ -113,7 +114,7 @@ abstract class IconPackTask : DefaultTask() {
             appendLine("<resources>")
             appendLine("    <version>1</version>")
             for ((group, list) in icons.groupBy { it.group }) {
-                appendLine("    <category title=\"$group\" />")
+                appendLine("    <category title=\"${xml(group)}\" />")
                 for (icon in list) appendLine("    <item drawable=\"${icon.name}\" />")
             }
             appendLine("</resources>")
@@ -135,8 +136,8 @@ abstract class IconPackTask : DefaultTask() {
     }
 
     private fun parse(file: File): List<Icon> {
-        // Group title; keep in sync with _groupOf in lib/icons/icon_source.dart.
-        val group = if (file.nameWithoutExtension == "itsash") "Ash Store" else file.nameWithoutExtension.replaceFirstChar { it.uppercase() }
+        // Same rules as parseIconDefs in lib/icons/icon_format.dart; keep them in sync.
+        var group: String? = null
         val out = mutableListOf<Icon>()
         var name: String? = null
         var startLine = 0
@@ -155,7 +156,11 @@ abstract class IconPackTask : DefaultTask() {
             }
             if (rows.size != GRID) fail(startLine, "[$n] has ${rows.size} grid rows, needs $GRID")
             if (apps.isEmpty()) fail(startLine, "[$n] has no app = lines")
-            out += Icon(n, props["label"] ?: n, color("bg"), color("fg"), apps.toList(), rows.toList(), group)
+            val g = group ?: fail(startLine, "the file needs \"group = Title\" before the first icon")
+            val bg = color("bg")
+            val fg = color("fg")
+            if (bg == fg) fail(startLine, "[$n] bg and fg are the same color")
+            out += Icon(n, props["label"] ?: n, bg, fg, apps.toList(), rows.toList(), g)
             props.clear(); apps.clear(); rows.clear()
         }
 
@@ -166,6 +171,7 @@ abstract class IconPackTask : DefaultTask() {
                 line.isEmpty() -> Unit
                 ROW.matches(line) -> {
                     if (name == null) fail(no, "grid row outside an icon")
+                    if (rows.size == GRID) fail(no, "[$name] has more than $GRID grid rows")
                     rows += line
                 }
                 line.startsWith("#") -> Unit // comment (grid rows are matched first)
@@ -177,9 +183,13 @@ abstract class IconPackTask : DefaultTask() {
                     startLine = no
                 }
                 line.contains("=") -> {
-                    if (name == null) fail(no, "property outside an icon")
                     val key = line.substringBefore("=").trim()
                     val value = line.substringAfter("=").trim()
+                    if (name == null) {
+                        if (key != "group") fail(no, "only 'group =' may come before the first icon")
+                        group = value
+                        return@forEachIndexed
+                    }
                     when (key) {
                         "app" -> apps += component(value) ?: fail(no, "app must be package/Activity, got '$value'")
                         "label", "bg", "fg" -> props[key] = value
@@ -193,11 +203,15 @@ abstract class IconPackTask : DefaultTask() {
         return out
     }
 
+    /** Escapes text for an XML attribute (group titles like "Payments & Banking"). */
+    private fun xml(s: String): String =
+        s.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+
     /** "pkg/.Act" -> "pkg/pkg.Act". Null when malformed. */
     private fun component(value: String): String? {
         val pkg = value.substringBefore("/", "")
         val cls = value.substringAfter("/", "")
-        if (pkg.isEmpty() || cls.isEmpty()) return null
+        if (pkg.isEmpty() || cls.isEmpty() || value.contains(' ')) return null
         return "$pkg/${if (cls.startsWith(".")) pkg + cls else cls}"
     }
 

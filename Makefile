@@ -1,6 +1,6 @@
 STORE_ID := iconx
 
-.PHONY: run build clean test icon preview
+.PHONY: run build clean test icon preview check
 
 run:
 	flutter pub get && flutter run
@@ -16,17 +16,18 @@ icon:
 	cd assets/icon && for f in logo logo_foreground logo_background; do rsvg-convert -w 1024 -h 1024 $$f.svg -o $$f-1024.png; done
 	dart run flutter_launcher_icons
 
-# Renders every pack icon (from assets/icons/*.txt) into dist/preview.png to check the pixel art.
-# Uses Flutter's JDK: a newer system JDK breaks the Android Gradle build. Needs ImageMagick.
+# Validates every icon file (same rules as the app and the Gradle build, plus duplicate names and
+# components across files) and renders all icons into dist/preview.png. Needs rsvg-convert.
 preview:
-	flutter pub get >/dev/null
-	J=$$(flutter doctor -v 2>/dev/null | sed -n 's/.*Java binary at: \(.*\)\/bin\/java.*/\1/p' | head -1); \
-	cd android && JAVA_HOME="$$J" ./gradlew -q :app:generateDebugIconPack
-	mkdir -p dist
-	montage -font /System/Library/Fonts/Supplemental/Arial.ttf -label '%t' -pointsize 13 \
-		build/app/generated/res/generateDebugIconPack/drawable-nodpi/*.png \
-		-tile 10x -geometry 120x120+8+8 -background '#E5E7EB' dist/preview.png
+	dart run tool/preview.dart -o dist/preview.svg
+	rsvg-convert dist/preview.svg -o dist/preview.png
 	@echo "dist/preview.png"
+
+# Same for some files only: make check FILES="assets/icons/40-x.txt" OUT=dist/x
+check:
+	dart run tool/preview.dart $(FILES) -o $(or $(OUT),dist/check).svg
+	rsvg-convert $(or $(OUT),dist/check).svg -o $(or $(OUT),dist/check).png
+	@echo "$(or $(OUT),dist/check).png"
 
 clean:
 	flutter clean

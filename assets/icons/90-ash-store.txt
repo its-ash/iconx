@@ -1,4 +1,6 @@
-# Apps from Ash Store (itsash.in). Format: see google.txt.
+# Apps from Ash Store (itsash.in). Format: see 10-google.txt.
+
+group = Ash Store
 
 [iconx]
 label = iconX
