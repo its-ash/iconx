@@ -1,0 +1,11 @@
+{
+  "id": "iconx",
+  "name": "iconX",
+  "repo": "its-ash/iconx",
+  "package": "com.itsash.iconx",
+  "tagline": "A pixel-art icon pack: every app icon redrawn as two-color pixel tiles.",
+  "description": "iconX turns your home screen into pixel art. Every icon is a two-color tile drawn on a 16 by 16 pixel grid, for Google apps, system and Motorola apps, popular apps like WhatsApp, Instagram, Spotify, PhonePe and Swiggy, and the Ash Store apps. Apply it in Nova, Lawnchair, Smart Launcher, Niagara, Action Launcher and other launchers that support icon packs. Apps without an icon get a matching pixel tile behind their normal icon. The app shows which of your apps are covered and lets you send an icon request for the rest. No account, no ads, no tracking.",
+  "category": "Personalization",
+  "icon": "assets/icon/logo-1024.png",
+  "homepage": "https://iconx.itsash.in/"
+}
