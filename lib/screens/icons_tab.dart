@@ -5,7 +5,7 @@ import '../icons/icon_source.dart';
 import '../icons/pixel_icon_view.dart';
 
 /// The gallery: every icon by group, with search. Tap an icon for a big preview and the apps it
-/// replaces.
+/// replaces. A sliver: the grids are lazy, so only the icons on screen are built.
 class IconsTab extends StatefulWidget {
   const IconsTab({super.key, required this.icons});
 
@@ -34,30 +34,45 @@ class _IconsTabState extends State<IconsTab> {
     for (final i in icons) {
       groups.putIfAbsent(i.group, () => []).add(i);
     }
-    return UiColumn(
-      gap: UiSpace.lg,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        UiSearchField(hint: 'Search ${widget.icons.length} icons', onChanged: (v) => setState(() => _query = v)),
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(
+          child: UiSearchField(
+            hint: 'Search ${widget.icons.length} icons',
+            onChanged: (v) => setState(() => _query = v),
+          ),
+        ),
         if (icons.isEmpty)
-          const UiEmptyState(
-            icon: Icons.search_off_rounded,
-            title: 'No icon found',
-            message: 'Missing an app? Open Your apps and send an icon request.',
+          const SliverPadding(
+            padding: EdgeInsets.only(top: UiSpace.lg),
+            sliver: SliverToBoxAdapter(
+              child: UiEmptyState(
+                icon: Icons.search_off_rounded,
+                title: 'No icon found',
+                message: 'Missing an app? Open Your apps and send an icon request.',
+              ),
+            ),
           ),
         for (final entry in groups.entries)
-          UiColumn(
-            gap: UiSpace.md,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              UiSectionHeader(entry.key, subtitle: '${entry.value.length} icons'),
-              UiResponsiveGrid(
-                minItemWidth: 76,
-                spacing: UiSpace.sm,
-                runSpacing: UiSpace.md,
-                children: [for (final i in entry.value) _IconCell(icon: i)],
-              ),
-            ],
+          SliverPadding(
+            padding: const EdgeInsets.only(top: UiSpace.lg),
+            sliver: SliverMainAxisGroup(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: UiSpace.md),
+                    child: UiSectionHeader(entry.key, subtitle: '${entry.value.length} icons'),
+                  ),
+                ),
+                UiSliverResponsiveGrid(
+                  minItemWidth: 76,
+                  spacing: UiSpace.sm,
+                  runSpacing: UiSpace.md,
+                  itemCount: entry.value.length,
+                  itemBuilder: (context, i) => _IconCell(icon: entry.value[i]),
+                ),
+              ],
+            ),
           ),
       ],
     );

@@ -29,51 +29,54 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return UiScaffold(
-      appBar: UiAppBar(
-        title: 'iconX',
-        actions: [UiIconButton(Icons.settings_rounded, tooltip: 'Settings', onPressed: _openSettings)],
-      ),
-      scrollable: true,
-      body: FutureBuilder<List<PixelIcon>>(
-        future: _icons,
-        builder: (context, snap) {
-          if (snap.hasError) {
-            return UiErrorState(
-              message: 'Could not load the icons.\n${snap.error}',
-              onRetry: () => setState(() => _icons = widget.iconLoader()),
-            );
-          }
-          final icons = snap.data;
-          if (icons == null) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: UiSpace.xxxl),
-              child: Center(child: UiSpinner(size: 28)),
-            );
-          }
-          return UiColumn(
-            gap: UiSpace.lg,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              UiTabs(
-                tabs: const [
-                  UiTab('Icons', icon: Icons.grid_view_rounded),
-                  UiTab('Your apps', icon: Icons.apps_rounded),
-                  UiTab('Apply', icon: Icons.check_circle_rounded),
-                ],
-                index: _tab,
-                variant: UiTabsVariant.segment,
-                onChanged: (i) => setState(() => _tab = i),
+    return FutureBuilder<List<PixelIcon>>(
+      future: _icons,
+      builder: (context, snap) {
+        final icons = snap.data;
+        // Lazy page: the tabs return slivers, so only the icons and rows on screen are built.
+        return UiScaffold.slivers(
+          appBar: UiAppBar(
+            title: 'iconX',
+            actions: [UiIconButton(Icons.settings_rounded, tooltip: 'Settings', onPressed: _openSettings)],
+          ),
+          gap: UiSpace.lg,
+          slivers: [
+            if (snap.hasError)
+              SliverToBoxAdapter(
+                child: UiErrorState(
+                  message: 'Could not load the icons.\n${snap.error}',
+                  onRetry: () => setState(() => _icons = widget.iconLoader()),
+                ),
+              )
+            else if (icons == null)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: UiSpace.xxxl),
+                  child: Center(child: UiSpinner(size: 28)),
+                ),
+              )
+            else ...[
+              SliverToBoxAdapter(
+                child: UiTabs(
+                  tabs: const [
+                    UiTab('Icons', icon: Icons.grid_view_rounded),
+                    UiTab('Your apps', icon: Icons.apps_rounded),
+                    UiTab('Apply', icon: Icons.check_circle_rounded),
+                  ],
+                  index: _tab,
+                  variant: UiTabsVariant.segment,
+                  onChanged: (i) => setState(() => _tab = i),
+                ),
               ),
               switch (_tab) {
                 0 => IconsTab(icons: icons),
                 1 => AppsTab(icons: icons, platform: widget.platform),
-                _ => ApplyTab(platform: widget.platform),
+                _ => SliverToBoxAdapter(child: ApplyTab(platform: widget.platform)),
               },
             ],
-          );
-        },
-      ),
+          ],
+        );
+      },
     );
   }
 }
