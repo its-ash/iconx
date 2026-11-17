@@ -5,7 +5,8 @@ import '../icons/icon_source.dart';
 import '../icons/pixel_icon_view.dart';
 
 /// The gallery: every icon by group, with search. Tap an icon for a big preview and the apps it
-/// replaces. A sliver: the grids are lazy, so only the icons on screen are built.
+/// replaces. A sliver holding one flat lazy list (like `ListView.builder`): each group header and
+/// each row of icons is one entry, built only when it scrolls near the screen.
 class IconsTab extends StatefulWidget {
   const IconsTab({super.key, required this.icons});
 
@@ -17,6 +18,15 @@ class IconsTab extends StatefulWidget {
 
 class _IconsTabState extends State<IconsTab> {
   String _query = '';
+
+  static const _minCellWidth = 76.0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Make the icon images in idle time, so scrolling never has to.
+    precachePixelIcons(widget.icons);
+  }
 
   List<PixelIcon> get _filtered {
     final q = _query.trim().toLowerCase();
@@ -53,30 +63,65 @@ class _IconsTabState extends State<IconsTab> {
               ),
             ),
           ),
-        for (final entry in groups.entries)
-          SliverPadding(
-            padding: const EdgeInsets.only(top: UiSpace.lg),
-            sliver: SliverMainAxisGroup(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: UiSpace.md),
-                    child: UiSectionHeader(entry.key, subtitle: '${entry.value.length} icons'),
+        SliverLayoutBuilder(
+          builder: (context, constraints) {
+            final cols = UiResponsiveGrid.columnsFor(
+              constraints.crossAxisExtent,
+              minItemWidth: _minCellWidth,
+              spacing: UiSpace.sm,
+            );
+            final entries = <_Entry>[
+              for (final g in groups.entries) ...[
+                _Header(g.key, g.value.length),
+                for (var i = 0; i < g.value.length; i += cols)
+                  _IconRow(g.value.sublist(i, (i + cols).clamp(0, g.value.length))),
+              ],
+            ];
+            return SliverList.builder(
+              itemCount: entries.length,
+              itemBuilder: (context, i) => switch (entries[i]) {
+                // Later headers sit under a row that already adds UiSpace.md below it.
+                _Header(:final group, :final count) => Padding(
+                  padding: EdgeInsets.only(top: i == 0 ? UiSpace.lg : UiSpace.lg - UiSpace.md, bottom: UiSpace.md),
+                  child: UiSectionHeader(group, subtitle: '$count icons'),
+                ),
+                _IconRow(:final icons) => Padding(
+                  padding: const EdgeInsets.only(bottom: UiSpace.md),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var c = 0; c < cols; c++) ...[
+                        if (c > 0) const SizedBox(width: UiSpace.sm),
+                        Expanded(child: c < icons.length ? _IconCell(icon: icons[c]) : const SizedBox.shrink()),
+                      ],
+                    ],
                   ),
                 ),
-                UiSliverResponsiveGrid(
-                  minItemWidth: 76,
-                  spacing: UiSpace.sm,
-                  runSpacing: UiSpace.md,
-                  itemCount: entry.value.length,
-                  itemBuilder: (context, i) => _IconCell(icon: entry.value[i]),
-                ),
-              ],
-            ),
-          ),
+              },
+            );
+          },
+        ),
       ],
     );
   }
+}
+
+/// One entry of the flat gallery list.
+sealed class _Entry {
+  const _Entry();
+}
+
+class _Header extends _Entry {
+  const _Header(this.group, this.count);
+
+  final String group;
+  final int count;
+}
+
+class _IconRow extends _Entry {
+  const _IconRow(this.icons);
+
+  final List<PixelIcon> icons;
 }
 
 class _IconCell extends StatelessWidget {

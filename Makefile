@@ -1,6 +1,6 @@
 STORE_ID := iconx
 
-.PHONY: run build clean test icon preview check
+.PHONY: run build clean test perf icon preview check
 
 run:
 	flutter pub get && flutter run
@@ -10,6 +10,13 @@ build:
 
 test:
 	flutter analyze && flutter test
+
+# Gallery scroll frame timings on a connected phone (profile build). Results in
+# build/integration_response_data.json (frame build/raster ms, missed frames).
+# flutter drive uninstalls the app when it ends, so the release build is put back after.
+perf:
+	-flutter drive --profile --no-dds --driver=test_driver/perf_driver.dart --target=integration_test/scroll_perf_test.dart
+	flutter build apk --release && adb install -r build/app/outputs/flutter-apk/app-release.apk
 
 # Launcher icon: assets/icon/*.svg -> *-1024.png -> mipmaps.
 icon:
