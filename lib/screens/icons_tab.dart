@@ -33,7 +33,10 @@ class _IconsTabState extends State<IconsTab> {
     if (q.isEmpty) return widget.icons;
     return [
       for (final i in widget.icons)
-        if (i.label.toLowerCase().contains(q) || i.name.contains(q) || i.packages.any((p) => p.contains(q))) i,
+        if (i.label.toLowerCase().contains(q) ||
+            i.name.toLowerCase().contains(q) ||
+            i.packages.any((p) => p.toLowerCase().contains(q)))
+          i,
     ];
   }
 

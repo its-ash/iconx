@@ -41,7 +41,7 @@
   nav { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); }
   nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 62px; }
   .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 700; font-size: 18px; text-decoration: none; }
-  .brand img { width: 32px; height: 32px; border-radius: 8px; image-rendering: pixelated; }
+  .brand img { width: 32px; height: 32px; border-radius: 8px; }
   .links { display: flex; gap: 20px; font-size: 14px; }
   .links a { color: var(--muted); text-decoration: none; }
   .links a:hover { color: var(--text); }
@@ -284,7 +284,7 @@
         const q = search.value.trim().toLowerCase();
         gallery.replaceChildren(...icons
           .filter(i => group === "All" || i.group === group)
-          .filter(i => !q || (i.label || "").toLowerCase().includes(q) || i.name.includes(q) || (i.apps || []).some(p => p.includes(q)))
+          .filter(i => !q || (i.label || "").toLowerCase().includes(q) || i.name.toLowerCase().includes(q) || (i.apps || []).some(p => p.toLowerCase().includes(q)))
           .map(cell));
       }
       search.oninput = render;

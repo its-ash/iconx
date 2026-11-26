@@ -81,7 +81,7 @@ class MainActivity : FlutterActivity() {
     private fun launchers(): List<Map<String, Any>> {
         val current = defaultLauncher()
         return Launchers.known.map { l ->
-            val pkg = l.packages.firstOrNull { installed(it) }
+            val pkg = l.packages.firstOrNull { it == current } ?: l.packages.firstOrNull { installed(it) }
             mapOf(
                 "id" to l.id,
                 "name" to l.name,
@@ -93,7 +93,8 @@ class MainActivity : FlutterActivity() {
 
     private fun apply(id: String?): String {
         val l = Launchers.known.firstOrNull { it.id == id } ?: return "failed"
-        val pkg = l.packages.firstOrNull { installed(it) } ?: return "failed"
+        val current = defaultLauncher()
+        val pkg = l.packages.firstOrNull { it == current } ?: l.packages.firstOrNull { installed(it) } ?: return "failed"
         val intent = l.applyIntent(pkg, packageName)
         if (intent != null && start(intent)) return "applied"
         val open = packageManager.getLaunchIntentForPackage(pkg)
